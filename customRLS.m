@@ -1,75 +1,59 @@
-function bi = customRLS(xT, x1, x2, N)
-% x2 = ECG_AVR
-% xT = ECG_II
+function consts = customRLS(xT, xref, N,  lambda)
+% Custom Recursive Least Square Algorithm (RLS):
+% Input:
+%   - xT: Target signal
+%   - xref: Reference signal
+%   - lambda: Forgetting factor 0 < lambda < 1
+%
+% Output:
+%   - coefs: ai and bi coefficients.
+%
+% Remars: 
+%   1. It no a priori info of theta is available, a typical iniziation
+%      choise is theta[-1] = 0 and P[-1] = alpha * I.
+%      where alpha is a large constant ( 100  in this case).
+%      and I is the indetity matrix. 
+% 
+% Author: Elvis Rodas.
 
+
+
+% Initiating values (n=0)
 
 % number of iterations
-Nsim=1000; 
 
 % number of unknowns, length of theta vector
-p=N; % ai and bi
-
 % We assume that x[n] = theta_1 x[n-1] + \theta_2 x[n-2]
 
 
-x = x2;
-
-% RLS forgetting factor
-mylambda=0.95;
-
-
-% Initilizations
-mytheta=0.2*ones(p,1);
-P=100*eye(p);
+% Initilizations: ai = 0.2, bi = 0.2 and n = 0.
+mytheta =ones(N,1);
+P=100*eye(N);
 
 % keep theta and error in an array to plot later
-eA=zeros(Nsim,1);
-thetaA(:,1)=mytheta;
-for i=1:Nsim-1-p
-    % new row for $H$
-    h=x(i+p-1:-1:i,1);
-    % error (this is prediction error, not the ls error )
-    e=xT(i+p,1)-h.'*mytheta;
-    % update kalman gain
-    K= P*h/(mylambda^i +h.'*P*h); 
-    %%%% TODO %%%%%%%%%%%%%%%%%%
-    % update theta 
-    mytheta=mytheta + K * e; 
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%% 
-    % update P
-     P = (eye(p)- K*h.')*P;
-       % store the values to plot later
-    thetaA(:,i+1)=mytheta;
-    eA(i,1)=e;  
+%eA=zeros(Nsim,1);
+thetaA(:,1) = mytheta;
+for n=N:length(xT)
+    
+    h = xref(n:-1:n-N+1);
+    
+    e = xT(n) - mytheta' * h;
+    
+    K= P*h/(lambda^n + h'*P*h); 
+    
+    mytheta = mytheta + K * e;
+    
+    P = (eye(N)- K*h.')*P;
+    
+    thetaA(:, n+1) = mytheta;
+   % eA(n,1)=e;  
 end
 
+consts = thetaA(:,end);
 
-bi = mytheta;
-
-% Below code is written for p=2
-% hf1=figure;
-% % Plot RLS filter coefficients, i.e. theta_1 and theta_2
-% h11=plot(thetaA(1,:)',':','Linewidth',2);
-% hold on
-% h12=plot(thetaA(2,:)',':','Linewidth',2);
-% hold on
-% % Plot the parameters of the process
-% h21=plot(ones(Nsim+1,1)* a1, '-k','Linewidth',2);
-% h22=plot(ones(Nsim+1,1)* a2, '--k','Linewidth',2);
-% xlim([1,Nsim+1]);
-% hxlabel=xlabel('Iteration');
-% hylabel=ylabel('Filter Coefficients');
-% legend([h11 h12 h21 h22], 'c1-Estimate', 'c2-Estimate', 'c1-True','c2-True','Location', 'best');
-% grid on;
-% set(gca,'FontSize',16);
-% set(hxlabel,'FontSize', 18);
-% set(hylabel,'FontSize', 18);
-% set(gca,'FontSize',16);
-% epsName=sprintf('figAR2_RLS.eps');
-% set(hf1, 'PaperPositionMode', 'auto');
-% saveas(hf1,epsName,'epsc')
 
 end
-% %Look at the error 
-% figure
-% plot(eA.^2)
+
+% Notes:
+% 1. The value of alpha is chosen large to prevent the biasing of the 
+%    estimator towards the initial estimate
