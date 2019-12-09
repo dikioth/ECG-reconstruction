@@ -1,0 +1,10 @@
+sbatch runc.slurm 1
+sbatch runc.slurm 2
+sbatch runc.slurm 3
+sbatch runc.slurm 4
+sbatch runc.slurm 5
+sbatch runc.slurm 6
+sbatch runc.slurm 7
+sbatch runc.slurm 8
+sbatch runc.slurm 9
+sbatch runc.slurm 10

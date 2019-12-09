@@ -1,0 +1,104 @@
+						
+						
+record  target		signals used for reconstruction
+						
+0	resp		pleth ecgII			
+1	art		resp ecgII			
+2	ecgV		resp ecgII ecg1			
+3	resp		ecgII cvp		
+4	abp		ecgII resp			
+5	pleth		resp abp ecgII	
+6	pleth		resp abp ecgII			
+7	ecgV		resp ecgII			
+8	ecgII		ecgavr			
+9	ecgavr		ecgII			
+10	ecgavr		ecgII			
+11	cvp		resp ecgII			
+12	resp 		icp pleth			
+13	icp 		resp abp ecgII			
+14	abp 		resp pleth			
+15	cvp 		resp ecgII			
+16	resp 		pleth cvp			
+17	icp 		resp abp ecgII			
+18	ecgV		resp ecgII ecg1			
+19	abp 		pleth ecgII			
+20	art 		ecgII pleth			
+21	abp 		resp pleth ecgII			
+22	ecgV 		resp ecgII			
+23	ecgV 		resp ecgII			
+24	resp		ecgII pleth			
+25	resp 		cvp			
+26	icp 		resp abp ecgII			
+27	ecgII		ecgavr			
+28	pleth		resp abp ecgII			
+29	avr		ecgII			
+30	ecgV 		resp ecgII ecg1			
+31	art 		resp ecgII cvp			
+32	resp 		icp cvp			
+33	ecgII		ecgavf ecgV			
+34	abp		pleth ecgII			
+35	ecgV 		resp ecgII			
+36	abp 		ecgII ecg1			
+37	abp		ecgII			
+38	ecgavr		ecgII			
+39	pleth		resp abp ecgII			
+40	resp		icp cvp			
+41	cvp		resp abp ecgII			
+42	cvp 		resp abp ecgII			
+43	ecgII 		ecgV			
+44	resp		cvp ecgII			
+45	ecgII		ecgavr			
+46	cvp 		resp abp ecgII			
+47	abp		ecgII ecgV			
+48	cvp		resp abp ecgII			
+49	ecgV		resp cgII			
+50	pleth		resp abp ecgV			
+51	resp 		cvp ecgII			
+52	ecgV 		resp ecgII			
+53	icp 		resp abp ecgV			
+54	icp		resp abp ecgV			
+55	ecgII		ecgavr			
+56	abp		pleth ecgII			
+57	ecgV		resp ecgII			
+58	ecgavr		ecgII			
+59	cvp 		resp abp ecgII			
+60	pleth 		resp abp ecgII			
+61	pleth		resp abp ecgII			
+62	pleth 		resp abp ecgII			
+63	resp		icp 			
+64	ecgV		resp ecgavr			
+65	resp		pleth cvp			
+66	abp		pleth ecgII			
+67	cvp 		resp pleth ecgII			
+68	abp		ecgII			
+69	resp		ecg3 ecgavl			
+70	ecgII		ecgavr			
+71	ecgavr		ecgII			
+72	cvp		resp abp ecgII			
+73	abp		ecgII			
+74	ecgavr		ecgII			
+75	ecgV		resp ecgII			
+76	abp		ecgII pleth			
+77	cvp		resp abp ecgII			
+78	ecgavr		ecgII ecgV			
+79	ecgV		resp ecgII			
+80	ecgavr		ecgII			
+81	ecgII		ecgavr			
+82	ecg3		ecgmcl ecgII			
+83	pleth		resp abp ecgII			
+84	ecg1		ecgII ecgV			
+85	pleth		resp abp ecgII			
+86	ecgII		ecgavr			
+87	pleth		resp abp ecgII			
+88	ecgavr		ecgII			
+89	ecgV		resp ecgII			
+90	ecgII		ecgavr			
+91	resp		cvp ecgII			
+92	ecgavr		ecgII			
+93	abp		ecgmcl 			
+94	pleth		resp abp ecgII			
+95	abp		ecgII			
+96	pleth		resp abp ecgII			
+97	pleth		resp abp ecgII			
+98	ecgII		ecgavr			
+99	ecgV		resp ecgII			
