@@ -99,29 +99,21 @@ hold on; plot([0;p2.xT(1:p)], '--')
 close all; clc;
 addpath('filters', 'functions');
 p2 = getpatient(2);
+cc = customADAM(p2.xT, p2.x2, 1000);
+plot(cc);
 
-% Zero mean signals.
-[xTzm, xTmean] = getzeromean(p2.xT);
-[x1zm, x1mean] = getzeromean(p2.x1);
-[x2zm, x2mean] = getzeromean(p2.x2);
 
-cc =  customADAM(xTzm, x2zm, 27);
-xhat = getReconstruction(cc, x2zm,125*30) + xTmean;
+
+%%
+cc = adamOpt(p2.xT, p2.x1, p2.x2, 0, 103);
+plot(cc)
+
+xhat = getReconstruction(cc, p2.x2,125*30);
 plot(xhat)
 hold on;
-plot(p2.xTm, '--');
-xlim([1, 125*5]);
+plot(p2.xTm);
+xli(7500-125*30,7500);
 
 
-%% LOOP
-Qvect = zeros(200,1);
-nn = 1;
-while nn < 200
-cc =  customADAM(xTzm, x2zm, nn);
-xhat = getReconstruction(cc, x2zm,125*30) + xTmean;
-[Q1, ~] = getPerformance(p2.xTm, xhat);
 
-Qvect(nn) = Q1;
-nn = nn + 1
-end
 
