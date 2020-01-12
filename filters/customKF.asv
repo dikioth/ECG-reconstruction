@@ -1,4 +1,4 @@
-function [out, F] = customKF(xT, varargin )
+function [out, F] = customKF(xT, x, p)
 % customKF computes a custom KALMAN FILTER.
 % Input:
 %       - xT: Target signal.
@@ -65,14 +65,12 @@ end
 % y = G x  + wn
 
 % where 
-% x = [a1 a2 .. aN b1 b2 .. bM]^T           M+N x 1 vector.
-% F = eye(N+M)                              M+N x M+N identity matrix.
-% G = [x1(n-1) x1(n-2) ... x1(n-N-1) ...
-%      x2(n-1) x2(n-2) ... x2(n-M-1)]       1 x M+N row vector.
+% x = [a1 a2 .. aN b1 b2 .. bM]^T
+% F = M+N x M+N identity matrix. 
 
 
 if method == 2
-    F = eye(NM);
+
     
 end
 

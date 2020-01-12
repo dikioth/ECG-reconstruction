@@ -1,4 +1,17 @@
 function [Q1, Q2] = getPerformance(xT_missing, xhat)
+%getPerformance: Computes the quality functions Q1 and Q2 defined as
+%
+%       Q1 = 1 - mse( xT, xhat) / var(xT);                  (1)
+%       Q2 = cov(xT, xhat)/sqrt(var(xT)(var(xhat))          (2)
+%
+%   Input:
+%       - xTm: 3750 x 1 vector. The true missing part of the signal.
+%       - xhat: 3750 x1 vector. The reconstructed missing part.
+%
+%   Output: 
+%       - Q1: scalar containing quality value defined in (1).
+%       - Q2: scalar containing quality value defined in (2).
+
 if length(xT_missing) == length(xhat)
     %Q1 = mean((xT_missing-xhat).^2)/var(xT_missing)
     %Q2 = cov(x, xhat)/sqrt(var(x)*var(xhat));

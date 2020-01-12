@@ -1,57 +1,133 @@
 
-%% METHOD 1: Recursive Least Square (RLS) Method.
+%% SIGNAL RECONSTRUCION.
 
 % Description:
+% The last 30s of the target signal xT will be reconstructed using
+% two reference signals; x1 and x2. Size are
+%
+%   xT: 71250 x 1 vector. (missing 3750 will be reconstructed).
+%   x1: 75000 x 1 vector.
+%   x2: 75000 x 1 vector.
+
 % Assumming that the target signal is a linear combination of x1 and x2.
 %
 %           N                     M
-%          ___                   ===
+%          ===                   ===
 %          \                     \
 % xT[n] =  /    a_i * x1[n-i] +  /    b_i * x2[n-i]
 %          ===                   ===
 %          i = 0                 i = 0
-
+%
+% Algorithm used is:
 % step 1: Using the frst 9.5 minutes of xT[n], x1[n], x2[n],
 %         train the RLS filter and estimate the coefficients ai and bi.
-% step 2: Estimate the last 0.5 minute (125*30 samples) by
+% step 2: Estimate the last 0.5 minute (125*30 samples).
+
+
+%% METHOD 1: RLS ALGORITHM
 
 % Importing filters and custom functions files.
 addpath('filters', 'functions');
 
-% Starting w/ patient 2 (by teacher suggestion)
-p = 2; % Patient number
-M = 70; % Filter tap for x1
-N = 100; % Filter tap for x2
+p = 1;      % Patient number
+M = 70;     % Filter tap for x1
+N = 100;    % Filter tap for x2
+lambda = 0.99;
+% Loading patient data.
+p = getpatient(p);
 
-% Loading data from directory.
-p2 = getpatient(p);
-
-% Zero meaned signals.
-[xTzm, xTmean] = getzeromean(p2.xT);
-[x1zm, ~] = getzeromean(p2.x1);
-[x2zm, ~] = getzeromean(p2.x2);
-
-% Filter coefficients theta for x1 and x2. (RLS method).
-ai = customRLS(xTzm, x1zm, M, 0.99);
-bi = customRLS(xTzm, x2zm, N, 0.99);
+% Filter coefficients. 'zm' indicates signals with substracted mean.
+ci = customRLS(p.xTzm, lambda, p.x1zm, M, p.x2zm, N);
 
 % Reconstructing the last 30 secs (125*30 = 3750 samples)
-xhatn1 = getReconstruction(ai, x1zm, 3750);
-xhatn2 = getReconstruction(bi, x2zm, 3750);
-xhat = xhatn1 + xhatn2 + xTmean;
-%
-xhat = getReconstruction(xTzm(1:107), x2zm, 3750) + xTmean;
-% Performaance analysis
-[Q1, Q2] = getPerformance(p2.xTm, xhat);
+xhat = getReconstruction(ci, p.x1zm, M, p.x2zm, N) + p.xTmean;
 
-% Comparing reconstruction xhat and missing singal xm.
-figure;
-hold on;
-plot(p2.xTm);
-plot(xhat);
-hold off;
+% Performaance analysis. xTm is the true missing part of xT.
+[Q1, Q2] = getPerformance(p.xTm, xhat);
 
-%% Method 2: Kalman filter
+% Pltting comparision of reconstruction xhat and true missing singal xm.
+plotResults(p.xTm, xhat, Q1, Q2);
+
+
+
+%% METHOD 2: ADAM optimizer
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+close all; clear all; clc;
+% Importing filters and custom functions files.
+addpath('filters', 'functions');
+
+p = 1;      % Patient number
+M = 10;     % Filter tap for x1
+N = 48;    % Filter tap for x2
+
+% Loading patient data.
+p = getpatient(p);
+
+% Filter coefficients. 'zm' indicates signals with substracted mean.
+ci = customADAM(p.xTzm, p.x1zm, M, p.x2zm, N);
+
+% Reconstructing the last 30 secs (125*30 = 3750 samples)
+xhat = getReconstruction(ci, p.x1zm, M, p.x2zm, N) + p.xTmean;
+
+% Performaance analysis. xTm is the true missing part of xT.
+[Q1, Q2] = getPerformance(p.xTm, xhat);
+
+% Pltting comparision of reconstruction xhat and true missing singal xm.
+plotResults(p.xTm, xhat, Q1, Q2);
+
+
+
+%% LOOP 1: SWEEP FOR INDIVIDUAL X1 and X2
+close all; clear all; clc;
+addpath('filters', 'functions');
+
+p = getpatient(1);
+
+iters = 400;
+Nvect = zeros(iters,1);
+Mvect = zeros(iters,1);
+Q1v = zeros(iters, 1); % N, M and Q1
+Q2v = zeros(iters, 1); % N, M and Q2
+
+
+i = 1;
+for n = 1:200
+    for m = 1:200
+        ci = customADAM(p.xTzm, p.x1zm, m, p.x2zm, n);
+        xhat = getReconstruction(ci, p.x1zm, m, p.x2zm, n) + p.xTmean;
+        [Q1, Q2] = getPerformance(p.xTm, xhat);
+        
+        Nvect(i) = n;
+        Mvect(i) = m;
+        Q1v(i) = Q1;
+        Q2v(i) = Q2;
+        
+        i = i + 1;
+        disp(['N: ', num2str(n), ' M: ', num2str(m)]);
+
+    end
+end
+
+%%
+close all;
+
+
+
+q = Qsweep1(:,4);
+x1 = Qsweep1(:,1);
+x2 = Qsweep1(:,2);
+
+ii = find(abs(q-1) <= 0.02);
+
+disp(q(ii))
+%plot(x1(ii), q(ii));
+plot(x2(ii), q(ii),'*');
+
+n = unique(x1(ii));
+m = unique(x2(ii));
+
+%% Method 2: Kalman filter (Uncompleted)
 
 
 % The target signal xT is defined as
@@ -68,14 +144,6 @@ addpath('filters', 'functions');
 % Loading data.
 p2 = getpatient(2);
 
-% Zero mean signals.
-[xTzm, xTmean] = getzeromean(p2.xT);
-[x1zm, x1mean] = getzeromean(p2.x1);
-[x2zm, x2mean] = getzeromean(p2.x2);
-
-% index
-ii = p2.indexMissingPart;
-
 % Extendind xT as defined in (*)
 xTzm_ext = vertcat(p2.xT, zeros(125*30, 1));
 
@@ -85,7 +153,7 @@ xTzm_ext = vertcat(p2.xT, zeros(125*30, 1));
 plot(xhat(1,:));
 
 
-%% Signal modelling
+% Signal modelling
 close all;
 p = 10000;
 [ai, w] = aryule(p2.xT,p-1);
@@ -93,35 +161,3 @@ p = 10000;
 F = vertcat(ai, eye(p-1, p));
 plot(F*p2.xT(1:p))
 hold on; plot([0;p2.xT(1:p)], '--')
-
-
-%% ADAM OPTIMIZER
-close all; clc;
-addpath('filters', 'functions');
-p2 = getpatient(2);
-
-% Zero mean signals.
-[xTzm, xTmean] = getzeromean(p2.xT);
-[x1zm, x1mean] = getzeromean(p2.x1);
-[x2zm, x2mean] = getzeromean(p2.x2);
-
-cc =  customADAM(xTzm, x2zm, 27);
-xhat = getReconstruction(cc, x2zm,125*30) + xTmean;
-plot(xhat)
-hold on;
-plot(p2.xTm, '--');
-xlim([1, 125*5]);
-
-
-%% LOOP
-Qvect = zeros(200,1);
-nn = 1;
-while nn < 200
-cc =  customADAM(xTzm, x2zm, nn);
-xhat = getReconstruction(cc, x2zm,125*30) + xTmean;
-[Q1, ~] = getPerformance(p2.xTm, xhat);
-
-Qvect(nn) = Q1;
-nn = nn + 1
-end
-

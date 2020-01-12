@@ -3,19 +3,17 @@ function p = getpatient(pn)
 %
 %   Input: - pn: scalar value. The number of patient to be loaded.
 %                allowed are: 1,2,3,4,5,6,7,8.
-%
 %   Files are:
-%
-%       Variable    Description             File Name
+
+%       Variable	Description             File Name
 %   =========================================================
-%       xT          Target signal.          ECG_X_AVR.mat
-%       x1          Reference signal 1.     ECG_X_II.mat
-%       x2          Reference signal 2.     ECG_X_V.mat
-%       xTm         Missing part.           ECG_X_II_missing.mat
+%       xT        Target signal.          ECG_X_AVR.mat
+%       x1        Reference signal 1.     ECG_X_II.mat
+%       x2        Reference signal 2.     ECG_X_V.mat
+%       xTm       Missing part.           ECG_X_II_missing.mat
 %   ----------------------------------------------------------
 %
-%   where X corresponds to patient number and files are 
-%   found in folder 'ECG_X_aYZ'
+%   where X corresponds to patient number and found in folder 'ECG_X_aYZ'
 %   Folders are: ECG_ ...
 %         [1_a02 | 2_a03 | 3_a06  | 4_a07 | 5_a08 |6_a09 | 7_a11 |8_a12]
 

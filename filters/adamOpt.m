@@ -1,36 +1,56 @@
+function h =  adamOpt(xT, x1, N, x2, M)
+% customADAM: ADAM optimizer.
+% h = customADAM(xT, [x1, x2, ...], [N, M, ... ])
+% Input:
+%       - xT: The target signal.
+%       - xref: An N x M matrix, wher M is the num of channels.
+%       - N: the filter tap number.
+% Output:
+%       - h: The coefficients.
+%
 
-function ab = adamOpt(xT, x1, x2, N, M)
 
-% LMS filter order
-NM = N+M;
-maxNM = max(N,M);
-% LMS filter parameters
-mn = zeros(NM,1);
-vn = zeros(NM,1);
 
-beta1 = 0.89;
+% Default values. Suggested by ref [1]
+alpha = 0.001;
+beta1 = 0.9;
 beta2 = 0.999;
-alpha = 0.0021;
-epsilon = 1e-5;
+epsilon = 1e-8;
 
-% LMS filter initilization
-h=0.2*ones(NM,1);
 
-% number of iterations
-Nsim=length(xT); 
 
-for i=maxNM:Nsim
-    %observations for this step
-    d = [xT(i:-1:i-N+1,1); xT(i:-1:i-M+1,1)];
-    y = [x1(i:-1:i-N+1,1); x2(i:-1:i-M+1,1)];
+
+if nargin == 5
+    oneRefSignal = false;
+    NM = N+M;
+    startIter = max(N,M);
+elseif nargin == 3
+    oneRefSignal = true;
+    NM = N;
+    startIter = N;
+end
+    % Initializing
+    h = 1*ones(NM,1);
+    m = zeros(NM,1);
+    v = zeros(NM,1);
+
+for n = startIter:length(xT)
     
-    gn = (h.'*h).*y - h.'*d;
-    % filter update
-    mn = beta1*mn + (1-beta1)*gn;
-    vn = beta2*vn + (1-beta2)*gn.^2;
-    my_mn = mn/(1-beta1^i);
-    my_vn = vn/(1-beta2^i);
-    h(:,1)= h(:,1) + alpha*my_mn./(sqrt(my_vn)+epsilon);
+    if oneRefSignal == true
+        y = x1(n:-1:n-N+1);
+    else
+        y = [x1(n:-1:n-N+1); x2(n:-1:n-M+1)];
+    end
+    d = xT(n);  % desired signal.
+    g = -y' * (d - h'*y);   % gradient.
+    m = beta1.* m + (1 - beta1).* g(:);
+    v = beta2.* v + (1 - beta2).* g(:).^2;
+    mhat = m./ (1 - beta1^n);
+    vhat = v./ (1 - beta2^n);
+    h = h - alpha.*mhat./(sqrt(vhat) + epsilon);
 end
-ab = h;
 end
+
+% References:
+% [1] D. P. Kingma and J. Ba, ?Adam: A method for stochastic optimization,?
+% Latest version available online: https://arxiv.org/abs/1412.6980.

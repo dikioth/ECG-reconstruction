@@ -1,4 +1,4 @@
-function taps = customRLS(xT, xref, N, lambda)
+function taps = customRLS(xT, lambda, varargin)
 % Custom Recursive Least Square Algorithm (RLS):
 % Input:
 %   - xT: Target signal
@@ -14,28 +14,42 @@ function taps = customRLS(xT, xref, N, lambda)
 %      where alpha is a large constant ( 100  in this case).
 %      and I is the indetity matrix.
 %
-% Author: Elvis Rodas.
 
 
-% Initiating values (n=0)
+% handling reference signals.
+if mod(length(varargin), 2)  == 0
+    % If varargin comes in pairs, e.g: x1, N.
+    numpairs = length(varargin)/2;
+    
+    for np = numpairs
+        sumTaps = sum([varargin{2:2:end}]);
+        startIter = max([varargin{2:2:end}]);
+    end
+else
+    error('Reference signal and filter taps should come in pairs.');
+end
 
-% number of iterations
 
-% number of unknowns, length of theta vector
-
-
-h = ones(N, 1);
-P = 100 * eye(N);
+h = ones(sumTaps, 1);
+P = 100 * eye(sumTaps);
 
 
 thetaA(:, 1) = h;
 
-for n = N:length(xT)
-    Un = xref(n:-1:n-N+1); % next N inputs.
+for n = startIter:length(xT)
+    
+    Un = [];
+    for np = 1:numpairs
+        xref = varargin{2*np-1};
+        NN = varargin{2*np};
+        x = xref(n:-1:n-NN+1);
+        Un = vertcat(Un, x);
+    end
+    
     K = P * Un / (lambda + Un' * P * Un); % Update kalman gain.
     e = xT(n) - h' * Un; % Error from prev. estimate.
     h = h + K * e; % Uppdate filter tap.
-    P = 1 / lambda * (eye(N) - K * Un') * P; % Update inverse
+    P = 1 / lambda * (eye(sumTaps) - K * Un') * P; % Update inverse
     thetaA(:, n+1) = h; % Storing filter taps into array.
 end
 
