@@ -11,10 +11,11 @@ function [Q1, Q2] = getPerformance(xT_missing, xhat)
 %   Output: 
 %       - Q1: scalar containing quality value defined in (1).
 %       - Q2: scalar containing quality value defined in (2).
+%
+% OBS: Due to time constrain the function was not done in a general manner.
+%      it is specific to the project.
 
 if length(xT_missing) == length(xhat)
-    %Q1 = mean((xT_missing-xhat).^2)/var(xT_missing)
-    %Q2 = cov(x, xhat)/sqrt(var(x)*var(xhat));
     meanxT_missing = mean(xT_missing);
     meanxhat = mean(xhat);
     xmse = 0;

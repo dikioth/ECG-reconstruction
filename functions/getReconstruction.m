@@ -31,7 +31,6 @@ xhat = zeros(lastN,1);
 
 i = 1;
 for n = lenxref-lastN+1:lenxref
-    
     ii = 0;
     for np = 1:numpairs
         NN = varargin{2*np};

@@ -8,6 +8,9 @@ function plotResults(xTm, xhat, Q1, Q2)
 %           - xhat: 3750 x x1 vector containing the reconstruction.
 %           - Q1  : scalar containing the quality quantity 1.
 %           - Q2  : scalar containing quality quantity 2.
+%
+% OBS: Due to time constrain the function was not done in a general manner.
+%      it is specific to the project.
 
 figure; hold on; plot(xTm); plot(xhat, '--'); hold off;
 xlim([1, 125*2]); % Showing last 2s.

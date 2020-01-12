@@ -1,18 +1,26 @@
 function p = getpatient(pn)
 % getpatient: Loads patient data (sampled at Fs = 125Hz).
+%   Use:    p = getpatient(pn)
 %
-%   Input: - pn: scalar value. The number of patient to be loaded.
-%                allowed are: 1,2,3,4,5,6,7,8.
+%   Input:  pn: scalar value. The number of patient to be loaded.
+%                allowed are: 1, 2, 3, 4, 5, 6, 7, 8.
 %
-%   Files are:
+%   Output: p: struct variable. The data of the chose patient containing
+%                - target signal with mean substracted: xTzm. 
+%                - The mean of the target signal: xTmean.
+%                - first reference signal w/ mean substracted: x1zm
+%                - Second reference signal w/ mean zusbracted: x2zm 
+%                - The mean of the target signal.
+%
+%   Files loaded are stored in the folder 'data'. Files are:
 %
 %       Variable    Description             File Name
-%   =========================================================
+%   ===========================================================
 %       xT          Target signal.          ECG_X_AVR.mat
 %       x1          Reference signal 1.     ECG_X_II.mat
 %       x2          Reference signal 2.     ECG_X_V.mat
 %       xTm         Missing part.           ECG_X_II_missing.mat
-%   ----------------------------------------------------------
+%   ------------------------------------------------------------
 %
 %   where X corresponds to patient number and files are 
 %   found in folder 'ECG_X_aYZ'
@@ -41,5 +49,4 @@ p.xTzm = p.xT - mean(p.xT); % Target signal w/ mean substracted.
 p.x1zm = p.x1 - mean(p.x1); % Reference 1 siganl w/ mean substracted.
 p.x2zm = p.x2 - mean(p.x2); % Reference 2 signal w/ mean substracted.
 p.xTmean = mean(p.xT);      % mean of target signal.
-
 end

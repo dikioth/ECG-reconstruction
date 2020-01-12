@@ -18,11 +18,13 @@ if mod(length(varargin), 2) == 0
     % if varargin comes in pairs, e.g x1 and N.
     numpairs = length(varargin)/2;
     
-    for np = numpairs
-        sumTaps = sum([varargin{2:2:end}]);
-        startIter = max([varargin{2:2:end}]);
-    end
+    taps = [varargin{2:2:end}];
+    xrefs = [varargin{1:2:end}];
+    
+    sumTaps = sum(taps);
+    startIter = max(taps);
 else
+    help customADAM;
     error('customADAM: Incorrect usage of function');
 end
 
@@ -38,15 +40,14 @@ h = ones(sumTaps,1);
 m = zeros(sumTaps,1);
 v = zeros(sumTaps,1);
 
+y = zeros(sumTaps,1);
 
 for n = startIter:length(xT)
-    
-    y = [];
+    ii = 0;
     for np = 1:numpairs
-        xref = varargin{2*np-1};
-        NN = varargin{2*np};
-        x = xref(n:-1:n-NN+1);
-        y = vertcat(y, x);
+        tap = taps(np);
+        y(ii+1:tap+ii,1) = xrefs(n:-1:n-tap+1, np);
+        ii = tap;
     end
     
     d = xT(n);  % desired signal.

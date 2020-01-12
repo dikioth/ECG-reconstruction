@@ -5,34 +5,39 @@
 % The last 30s of the target signal xT will be reconstructed using
 % two reference signals; x1 and x2. Size are
 %
-%   xT: 71250 x 1 vector. (missing 3750 will be reconstructed).
-%   x1: 75000 x 1 vector.
-%   x2: 75000 x 1 vector.
-
+%   xT: 71250x1 vector. (missing 3750 will be reconstructed).
+%   x1: 75000x1 vector.
+%   x2: 75000x1 vector.
+%
 % Assumming that the target signal is a linear combination of x1 and x2.
 %
 %           N                     M
 %          ===                   ===
 %          \                     \
-% xT[n] =  /    a_i * x1[n-i] +  /    b_i * x2[n-i]
+% xT[n] =  /    a_i * x1[n-i] +  /    b_i * x2[n-i]         (*)
 %          ===                   ===
 %          i = 0                 i = 0
 %
 % Algorithm used is:
 % step 1: Using the frst 9.5 minutes of xT[n], x1[n], x2[n],
 %         train the RLS filter and estimate the coefficients ai and bi.
-% step 2: Estimate the last 0.5 minute (125*30 samples).
+%         Methods used for this steps are: RLS and ADAM optimizer.
+%
+% step 2: Estimate the last 0.5 minute (125*30 samples) using equation (*)
+%         and the coefficients computed in step 1.
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% METHOD 1: RLS ALGORITHM
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Importing filters and custom functions files.
 addpath('filters', 'functions');
 
-p = 1;      % Patient number
-M = 70;     % Filter tap for x1
-N = 100;    % Filter tap for x2
-lambda = 0.99;
+p = 1;          % Patient number
+M = 70;         % Filter tap for x1
+N = 100;        % Filter tap for x2
+lambda = 0.99;  % Forgetting factor
+
 % Loading patient data.
 p = getpatient(p);
 
@@ -48,12 +53,9 @@ xhat = getReconstruction(ci, p.x1zm, M, p.x2zm, N) + p.xTmean;
 % Pltting comparision of reconstruction xhat and true missing singal xm.
 plotResults(p.xTm, xhat, Q1, Q2);
 
-
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% METHOD 2: ADAM optimizer
-%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-close all; clear all; clc;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Importing filters and custom functions files.
 addpath('filters', 'functions');
 
@@ -161,3 +163,27 @@ p = 10000;
 F = vertcat(ai, eye(p-1, p));
 plot(F*p2.xT(1:p))
 hold on; plot([0;p2.xT(1:p)], '--')
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% PRE PROCESSING DATA. FOR REPPORT.
+close all;
+% last 32s for xT, x1 and x2 for patient 2.
+p = getpatient(2);
+Fs = 125; % sampling freq.
+t = (1:length(p.x1))/Fs;
+
+tlim = [565 575];    
+lastsecs = 35;
+figure(1); pp1 = Plot(t,[p.xT; zeros(125*30,1)]); xlim(tlim)
+figure(2); pp2 = Plot(t,p.x1); xlim(tlim)
+figure(3); pp3 = Plot(t,p.x2); xlim(tlim)
+
+for pp = [pp1,pp2,pp3]
+    pp.BoxDim = [7.16,3];
+pp.LineWidth = 2;
+pp.XLabel = 'Time [s]';
+pp.YLabel = 'Voltage [mV]';
+
+end
+
