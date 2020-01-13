@@ -30,12 +30,14 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% METHOD 1: RLS ALGORITHM
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+close all; clc;
+
 % Importing filters and custom functions files.
 addpath('filters', 'functions');
 
 p = 1;          % Patient number
-M = 70;         % Filter tap for x1
-N = 100;        % Filter tap for x2
+M = 10;         % Filter tap for x1
+N = 48;         % Filter tap for x2
 lambda = 0.99;  % Forgetting factor
 
 % Loading patient data.
@@ -56,6 +58,8 @@ plotResults(p.xTm, xhat, Q1, Q2);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% METHOD 2: ADAM optimizer
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+close all; clc;
+
 % Importing filters and custom functions files.
 addpath('filters', 'functions');
 
@@ -80,56 +84,84 @@ plotResults(p.xTm, xhat, Q1, Q2);
 
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% LOOP 1: SWEEP FOR INDIVIDUAL X1 and X2
-close all; clear all; clc;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% This section does the following:
+% 1. Performs a sweep from 5 to 200 w/ intervall of 5 for filter taps N&M.
+%    the function 'getSweep' finds the optimal N and M which gives the 
+%    highest Q1 and Q2.
+% 2. Performs a finer sweep of the neighborhood (length 10) of the optimal 
+%    N and M w/ intervall of 1. E.g the intervalls |optimal M| <= 10
+%    and | optimal N| <= 10.
+% 4. Plots the results found in 3.
+% 5. Displays a table of of Q1 for N and M.
+
+close all; clc;
 addpath('filters', 'functions');
 
-p = getpatient(1);
+% CHANGE VALUES BELOW.
+pn = 1; % patient number. 
+Mintervall = 5:5:200;
+Nintervall = 5:5:200;
+% CHANGE VALUES ABOVE.
 
-iters = 400;
-Nvect = zeros(iters,1);
-Mvect = zeros(iters,1);
-Q1v = zeros(iters, 1); % N, M and Q1
-Q2v = zeros(iters, 1); % N, M and Q2
+% 1. Performing sweep w/ intervall of 5.
+result1 = getSweep(pn, Mintervall, Nintervall);
 
+% Displaying results from above.
+disp('===============================================');
+disp('A sweep from 5 to 200 w/ intervall of 5 yields.');
+fprintf('Results for Patient %d:\n ', pn);
+fprintf('Max Q1: %.2f corresponds to M: %d, N: %d\n', result.maxQ1, ...
+    result.maxQ1M, result.maxQ1N);
+fprintf('Max Q2: %.2f corresponds to M: %d, N: %d\n', result.maxQ2, ...
+    result.maxQ2M, result.maxQ2N);
+disp('===============================================');
 
-i = 1;
-for n = 1:200
-    for m = 1:200
-        ci = customADAM(p.xTzm, p.x1zm, m, p.x2zm, n);
-        xhat = getReconstruction(ci, p.x1zm, m, p.x2zm, n) + p.xTmean;
-        [Q1, Q2] = getPerformance(p.xTm, xhat);
-        
-        Nvect(i) = n;
-        Mvect(i) = m;
-        Q1v(i) = Q1;
-        Q2v(i) = Q2;
-        
-        i = i + 1;
-        disp(['N: ', num2str(n), ' M: ', num2str(m)]);
+% 2. Performing sweep with intervall of 1 near optimal M,N optained above.
+pm = 5; % <= Change here. plus minus value. 
+neighborhoodM = maxQ1M-pm:maxQ1M+pm; % maxQ1M +- 10;
+neighborhoodN = maxQ1N-pm:maxQ1N+pm; % maxQ1N +- 10;
+result2 = getSweep(pn, neighborhoodM, neighborhoodN); 
 
-    end
+% Displaying results.
+disp('===============================================');
+fprintf('Sweep of M from %d to %d w/ intervall of 1.\n', maxQ1M -10, maxQ1M+10);
+fprintf('Sweep of N from %d to %d w/ intervall of 1.\n', maxQ1N -10, maxQ1N+10);
+
+fprintf('Results for Patient %d:\n ', pn);
+fprintf('Max Q1: %.2f corresponds to M: %d, N: %d\n', result2.maxQ1, ...
+    result2.maxQ1M, result2.maxQ1N);
+fprintf('Max Q2: %.2f corresponds to M: %d, N: %d\n', result2.maxQ2, ...
+    result2.maxQ2M, result2.maxQ2N);
+disp('===============================================');
+
+% 3. Plotting relevant 
+neigLen = 2*pm; % Neighborhood length.
+hold on;
+for i = 1:neigLen+1
+    plot(neighborhoodM, result2.Q1v(i+neigLen*(i-1):i+neigLen*i));
+    disp(result2.Q1v(i+neigLen*(i-1):i+neigLen*i));
+    %title(num2str(i*5));
 end
-
-%%
-close all;
+hold off;
 
 
+% 4. Showing table of Q1 for report. Rows are M, Columns are N.
+disp('Q1 for patient 1 Rows:M, columns:N')
+reshapedQ1 = reshape(result2.Q1v, neigLen+1, neigLen+1);
 
-q = Qsweep1(:,4);
-x1 = Qsweep1(:,1);
-x2 = Qsweep1(:,2);
+disp(reshapedQ1);
 
-ii = find(abs(q-1) <= 0.02);
 
-disp(q(ii))
-%plot(x1(ii), q(ii));
-plot(x2(ii), q(ii),'*');
-
-n = unique(x1(ii));
-m = unique(x2(ii));
-
+function A = MatrixReplace(A,B)
+    [p,q] = size(B); 
+    A(end-p+1:end, end-q+1:end) = B; 
+end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Method 2: Kalman filter (Uncompleted)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
 % The target signal xT is defined as
@@ -167,11 +199,32 @@ hold on; plot([0;p2.xT(1:p)], '--')
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% PRE PROCESSING DATA. FOR REPPORT.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+close all;
+
+addpath('filters', 'functions');
+addpath(fullfile('PlotPub', 'lib'));
 
 % last 32s for xT, x1 and x2 for patient 2.
 p = getpatient(2);
 Fs = 125; % sampling freq.
 t = (1:length(p.x1))/Fs;
-tosecs = 1/125;
 
+tlim = [565 575];    
+lastsecs = 35;
+figure(1); pp1 = Plot(t,[p.xT; zeros(125*30,1)]); xlim(tlim)
+figure(2); pp2 = Plot(t,p.x1); xlim(tlim)
+figure(3); pp3 = Plot(t,p.x2); xlim(tlim)
+
+pp1.Title = 'Target signal xT';
+pp2.Title = 'Correlated reference signal x1';
+pp3.Title = 'Correlated refernece signal x2';
+
+for pp = [pp1,pp2,pp3]
+    pp.BoxDim = [7.16,3];
+pp.LineWidth = 2;
+pp.XLabel = 'Time [s]';
+pp.YLabel = 'Voltage [mV]';
+end
 
