@@ -12,7 +12,7 @@ function plotResults(xTm, xhat, Q1, Q2)
 % OBS: Due to time constrain the function was not done in a general manner.
 %      it is specific to the project.
 
-figure; hold on; plot(xTm); plot(xhat, '--'); hold off;
+hold on; plot(xTm); plot(xhat, '--'); hold off;
 xlim([1, 125*2]); % Showing last 2s.
 title(sprintf('Reconstruction. Q1 = %.2g, Q2 = %.2g', Q1, Q2));
 xlabel('N');

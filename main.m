@@ -35,9 +35,9 @@ close all; clc;
 % Importing filters and custom functions files.
 addpath('filters', 'functions');
 
-p = 1;          % Patient number
-M = 10;         % Filter tap for x1
-N = 48;         % Filter tap for x2
+p = 2;          % Patient number
+M = 6;         % Filter tap for x1
+N = 20;         % Filter tap for x2
 lambda = 0.99;  % Forgetting factor
 
 % Loading patient data.
@@ -64,8 +64,8 @@ close all; clc;
 addpath('filters', 'functions');
 
 p = 1;      % Patient number
-M = 10;     % Filter tap for x1
-N = 48;    % Filter tap for x2
+M = 5;     % Filter tap for x1
+N = 55;    % Filter tap for x2
 
 % Loading patient data.
 p = getpatient(p);
@@ -85,7 +85,7 @@ plotResults(p.xTm, xhat, Q1, Q2);
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% LOOP 1: SWEEP FOR INDIVIDUAL X1 and X2
+%% LOOP 1: SWEEP OF FILTER TAPS N AND M FOR INDIVIDUAL X1 and X2
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % This section does the following:
 % 1. Performs a sweep from 5 to 200 w/ intervall of 5 for filter taps N&M.
@@ -101,7 +101,7 @@ close all; clc;
 addpath('filters', 'functions');
 
 % CHANGE VALUES BELOW.
-pn = 4; % patient number. 
+pn = 1; % patient number. 
 Mintervall = 5:5:200;
 Nintervall = 5:5:200;
 % CHANGE VALUES ABOVE.
@@ -120,23 +120,28 @@ fprintf('Max Q2: %.2f corresponds to M: %d, N: %d\n', result1.maxQ2, ...
 disp('===============================================');
 
 % 2. Performing sweep with intervall of 1 near optimal M,N optained above.
-pm = 5; % <= Change here. plus minus value. 
-neighborhoodM = maxQ1M-pm:maxQ1M+pm; % maxQ1M +- 10;
-neighborhoodN = maxQ1N-pm:maxQ1N+pm; % maxQ1N +- 10;
+neiglen = 5; % <= Change here. plus minus value.
+pn = 8; % patient number
+load(fullfile(pwd, 'Results', ['sweep_patient', num2str(pn), '.mat']));
+
+neighborhoodM = result1.maxQ1M-neiglen:result1.maxQ1M+neiglen; % maxQ1M +- 10;
+neighborhoodN = result1.maxQ1N-neiglen:result1.maxQ1N+neiglen; % maxQ1N +- 10;
 result2 = getSweep(pn, neighborhoodM, neighborhoodN); 
 
 % Displaying results.
 disp('===============================================');
-fprintf('Sweep of M from %d to %d w/ intervall of 1.\n', maxQ1M -10, maxQ1M+10);
-fprintf('Sweep of N from %d to %d w/ intervall of 1.\n', maxQ1N -10, maxQ1N+10);
+fprintf('Sweep of M from %d to %d w/ intervall: [%d:1:%d] \n', ...
+    result1.maxQ1M -neiglen, result1.maxQ1M+neiglen);
+fprintf('Sweep of N from %d to %d w/ intervall: [%d:1:%d] \n', ...
+    result1.maxQ1N -neiglen, result1.maxQ1N+neiglen);
 
 fprintf('Results for Patient %d:\n ', pn);
-fprintf('Max Q1: %.2f corresponds to M: %d, N: %d\n', result2.maxQ1, ...
+fprintf('Max Q1: %.4f corresponds to M: %d, N: %d\n', result2.maxQ1, ...
     result2.maxQ1M, result2.maxQ1N);
-fprintf('Max Q2: %.2f corresponds to M: %d, N: %d\n', result2.maxQ2, ...
+fprintf('Max Q2: %.4f corresponds to M: %d, N: %d\n', result2.maxQ2, ...
     result2.maxQ2M, result2.maxQ2N);
 disp('===============================================');
-
+%
 % 3. Plotting relevant 
 neigLen = 2*pm; % Neighborhood length.
 hold on;
@@ -161,46 +166,56 @@ disp(table);
 save(fullfile('Results',['sweep_patient', num2str(pn),'.mat']), 'result1');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Method 2: Kalman filter (Uncompleted)
+%% Sweep of ADAM optimizer values. 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+close all; clc;
 
-
-% The target signal xT is defined as
-%
-% xT[n] = { xT[n-L], for 0 <= n <= L,       (*)
-%         {  0       otherwise
-%
-% where L is the length of the missing part (125*30 = 3750 in this case).
-
-close all; clear all; clc;
-% importing filter and custom functions.
+% Importing filters and custom functions files.
 addpath('filters', 'functions');
 
-% Loading data.
-p2 = getpatient(2);
+p = 4;      % Patient number. Choosing the one with lowest Q1, Q2.
+M = 16;     % Filter tap for x1
+N = 134;    % Filter tap for x2
 
-% Extendind xT as defined in (*)
-xTzm_ext = vertcat(p2.xT, zeros(125*30, 1));
+% Loading patient data.
+p = getpatient(p);
 
-% Kalman filter
-[xhat, F] = customKF(xTzm_ext, x2zm, 106);
+% Filter coefficients. 'zm' indicates signals with substracted mean.
 
-plot(xhat(1,:));
+steps  = 1e-10;
+starti = 1e-8-steps;
+endi   = 1e-8+steps;
+intervall = starti:steps:endi;
+len = length(intervall);
+Q1vect = zeros(len,1);
+Q2vect = zeros(len,1);
+i= 1;
 
+for beta = intervall
+    ci = customADAM2(p.xTzm, 0.001, 0.9971, 0.9988,beta, p.x1zm, M, p.x2zm, N);
 
-% Signal modelling
-close all;
-p = 10000;
-[ai, w] = aryule(p2.xT,p-1);
+% Reconstructing the last 30 secs (125*30 = 3750 samples)
+xhat = getReconstruction(ci, p.x1zm, M, p.x2zm, N) + p.xTmean;
 
-F = vertcat(ai, eye(p-1, p));
-plot(F*p2.xT(1:p))
-hold on; plot([0;p2.xT(1:p)], '--')
+% Performaance analysis. xTm is the true missing part of xT.
+fprintf('%d/%d\n', i, len);
+
+[Q1, Q2] = getPerformance(p.xTm, xhat);
+Q1vect(i) = Q1;
+Q2vect(i) = Q2;
+i = i + 1;
+disp(Q1);
+disp(beta);
+end
+% Pltting comparision of reconstruction xhat and true missing singal xm.
+
+plot(intervall, Q1vect);
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% PRE PROCESSING DATA. FOR REPPORT.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% OBS: Plot() is from the libraray PlotPub and needs to be "path added". 
 
 close all;
 
@@ -227,5 +242,49 @@ for pp = [pp1,pp2,pp3]
 pp.LineWidth = 2;
 pp.XLabel = 'Time [s]';
 pp.YLabel = 'Voltage [mV]';
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% POST PROCESSING DATA. FOR REPPORT.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Assuming sweep was made for patients 1-8 and files stored in 'Results'.
+close all;
+
+for pn = 1:8
+fprintf('Patient number: %d. \n', pn);
+load(fullfile(pwd, 'Results', ['sweep_patient', num2str(pn), '.mat']));
+M = result2.maxQ1M; N = result2.maxQ1N;
+
+% Using RLS and ADAM methods.
+p = getpatient(pn);
+
+% Filter coefficients. 'zm' indicates signals with substracted mean.
+ciADAM = customADAM(p.xTzm, p.x1zm, M, p.x2zm, N);
+ciRLS = customRLS(p.xTzm, 0.99, p.x1zm, M, p.x2zm, N);
+
+% Reconstructing the last 30 secs (125*30 = 3750 samples)
+xhatADAM = getReconstruction(ciADAM, p.x1zm, M, p.x2zm, N) + p.xTmean;
+xhatRLS = getReconstruction(ciRLS, p.x1zm, M, p.x2zm, N) + p.xTmean;
+
+% Performaance analysis. xTm is the true missing part of xT.
+[Q1ADAM, Q2ADAM] = getPerformance(p.xTm, xhatADAM);
+[Q1RLS, Q2RLS] = getPerformance(p.xTm, xhatRLS);
+
+% Pltting comparision of reconstruction xhat and true missing singal xm.
+t = 75000-125*30+1:75000;
+figure;
+hold on;
+plot(t./125, p.xTm);
+plot(t./125, xhatADAM);
+plot(t./125, xhatRLS);
+hold off;
+xlim([t(1)/125-0.01, t(1)/125 + 2]);
+
+% Using the PlotPub library.
+eval(['plot', num2str(pn), '= Plot();']);
+eval(['plot', num2str(pn), '.LineWidth = 1.5;']);
+eval(sprintf('plot%d.Title = ''Patient %d '';', pn, pn));
+eval(sprintf('plot%d.Legend = {''Original'', '' RLS '', '' ADAM''};', pn));
+eval(sprintf('pplot%d.BoxDim = [7.16,3];',pn));
 end
 

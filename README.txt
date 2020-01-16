@@ -1,0 +1,4 @@
+- Main code is in main.m
+- The filter used were RLS and ADAM and are found in folder 'filters'.
+- The folder 'functions' are custom functions used for reading data, getting reconstruction, plot results, etc.
+- Original figures presented in the repport are found in 'Result'.
