@@ -1,5 +1,5 @@
 # Reconstruction of ECG signals using RLS and ADAM optimizer.
-
+Read the report [here](report.pdf).
 ## Description 
 
 8 patients have measured ECG-signals. The last 30 seconds of a 10 minute long signal is missing for each one. 
@@ -20,4 +20,3 @@ The project is based on the 2010 challenge published by the online forum [Physio
 - The filters used were RLS and ADAM and are found in folder ```filters```.
 - The folder ```functions``` are custom functions used for reading data, getting reconstruction, plot results, etc.
 - Original figures presented in the repport are found in ```Result```.
-- Report is found [here](report.pdf).
